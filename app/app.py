@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_cors import CORS, cross_origin
 
 import spacy
 import en_core_web_lg
@@ -10,24 +11,35 @@ import nltk
 import heapq
 
 app = Flask(__name__)
+cors = CORS(app)
+
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 punctuations = '!"#$%&\'()*+,-/:;<=>?@[\\]^_`{|}~©'
+
+nltk.download('stopwords')
+nltk.download('punkt')
 
 stopwords = stopwords.words('english')
 nlp = spacy.load('en_core_web_lg')
 
 
-# nltk.download('punkt')
-
-
 @app.route('/summarise', methods=['POST'])
+@cross_origin()
 def summarise():
     payload = request.get_json()
     raw_text = payload['text']
 
     normalised_text = normalize_text(raw_text)
     cleaned_text = cleanup_text(normalised_text)
-    return generate_summary(raw_text, cleaned_text[0])
+    return {"summary": generate_summary(raw_text, cleaned_text[0]),
+            "image": "https://gph.is/28TEXx4"
+            }
+
+
+@app.route('/', methods=['GET'])
+def index():
+    return "Container is running"
 
 
 def normalize_text(text):
@@ -85,7 +97,3 @@ def generate_summary(text_without_removing_dot, cleaned_text):
     print('\n\nSummarized text:\n')
     print(summary)
     return summary
-
-
-if __name__ == '__main__':
-    app.run()
